@@ -120,9 +120,9 @@ public class VoldemortSwapJob extends AbstractJob {
         }
 
         AdminClientConfig adminConfig = new AdminClientConfig().setMaxConnectionsPerNode(cluster.getNumberOfNodes())
-                                                               .setAdminConnectionTimeoutSec(15)
+                                                               .setAdminConnectionTimeoutSec(60)
                                                                .setMaxBackoffDelayMs(maxBackoffDelayMs)
-                                                               .setAdminSocketTimeoutSec(60);
+                                                               .setAdminSocketTimeoutSec(60 * 5);// Admin request time out is 5min.
 
         ClientConfig clientConfig = new ClientConfig().setBootstrapUrls(cluster.getBootStrapUrls())
                                                       .setConnectionTimeout(httpTimeoutMs,
