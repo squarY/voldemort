@@ -17,6 +17,9 @@
 
 package voldemort.server.protocol.admin;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.protobuf.Message;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -31,10 +34,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-
 import voldemort.VoldemortException;
 import voldemort.client.protocol.VoldemortFilter;
 import voldemort.client.protocol.admin.AdminClient;
@@ -100,10 +101,6 @@ import voldemort.versioning.VectorClock;
 import voldemort.versioning.Versioned;
 import voldemort.xml.ClusterMapper;
 import voldemort.xml.StoreDefinitionsMapper;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.protobuf.Message;
 
 
 /**
@@ -1058,9 +1055,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
                 throw new ReadOnlyFetchDisabledException("Pushes to this node have been disabled."
                         + " Please reach out to the cluster admin for assistance.");
             }
-            final ReadOnlyStorageEngine store = getReadOnlyStorageEngine(metadataStore,
-                                                                         storeRepository,
-                                                                         storeName);
+            final ReadOnlyStorageEngine store = getReadOnlyStorageEngine(metadataStore, storeRepository, storeName);
             final long pushVersion;
             if(request.hasPushVersion()) {
                 pushVersion = request.getPushVersion();
@@ -2033,9 +2028,11 @@ public class AdminServiceRequestHandler implements RequestHandler {
         } else {
             FailedFetchLock distributedLock = null;
             try {
+                logger.info("Try to acquire the distributed lock.");
                 distributedLock = FailedFetchLock.getLock(voldemortConfig, new Props(extraInfoProperties));
 
                 distributedLock.acquireLock();
+                logger.info("Lock acquired ");
 
                 Set<Integer> alreadyDisabledNodes = distributedLock.getDisabledNodes();
 
@@ -2083,6 +2080,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
                     for (Integer nodeId: nodesFailedInThisFetch) {
                         logger.warn("Will disable store '" + storeName + "' on node " + nodeId);
                         distributedLock.addDisabledNode(nodeId, storeName, pushVersion);
+                        logger.info("Added " + nodeId + " to the distributed lock");
                         if (firstNode) {
                             firstNode = false;
                         } else {
